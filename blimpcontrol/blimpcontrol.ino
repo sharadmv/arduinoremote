@@ -2,6 +2,8 @@ int pin1 = 13;
 int pin2 = 12;
 int pin3 = 11;
 int pin4 = 10;
+int pin5 = 9;
+
 void setup() {                
   pinMode(pin1, OUTPUT);
   pinMode(pin2, OUTPUT);
@@ -41,6 +43,12 @@ void loop() {
     } else if (in == 104){
       digitalWrite(pin4, LOW);
       Serial.println("10 LOW");
+    } else if (in == 105){
+      digitalWrite(pin5, HIGH);
+      Serial.println("9 HIGH");
+    } else if (in == 106){
+      digitalWrite(pin5, LOW);
+      Serial.println("9 LOW");
     }
   }
   /* digitalWrite(pin1, HIGH);

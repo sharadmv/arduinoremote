@@ -1,0 +1,30 @@
+<html>
+  <script type='text/javascript' src='/jquery.js'></script>
+  <script>
+    $(document).ready(function() {
+      $("#accelerate").click(function() {
+        $.ajax({
+          url:"http://10.10.66.40:8080/accelerate"
+        });
+      });
+      $("#reverse").click(function() {
+        $.ajax({
+          url:"http://10.10.66.40:8080/reverse"
+        });
+      });
+      $("#stop").click(function() {
+        $.ajax({
+          url:"http://10.10.66.40:8080/stop"
+        });
+      });
+    });
+  </script>
+  <body>
+    <button id='accelerate'> Accelerate
+    </button>
+    <button id='reverse'>Reverse
+    </button>
+    <button id='stop'>Stop
+    </button>
+  </body>
+</html>

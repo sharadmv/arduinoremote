@@ -1,12 +1,22 @@
 package com.sharad.blimpcontrol;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.app.Activity;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
@@ -21,14 +31,11 @@ import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
-import com.getbridge.bridge.Bridge;
-import com.getbridge.bridge.BridgeRemoteObject;
-
 public class Blimp extends Activity implements SensorEventListener {
-	Button accelerate, reverse;
-	Bridge bridge;
+	Button accelerate, reverse, auto;
 	Caradson caradson;
 
 	private SensorManager sm;
@@ -41,22 +48,45 @@ public class Blimp extends Activity implements SensorEventListener {
 	private WakeLock wl;
 	private boolean leftOn, rightOn;
 
-	private boolean accelerating = false, reversing = false;
+	private boolean accelerating = false, reversing = false, autoing = false;
 
-	interface Caradson extends BridgeRemoteObject {
-		public void accelerate();
+	class Caradson {
+		public void accelerate() {
+			new RequestTask().execute(getIp() + "/api/accelerate/true");
+		}
 
-		public void reverse();
+		public void auto() {
+			new RequestTask().execute(getIp() + "/api/auto/true");
+		}
 
-		public void leftOn();
+		public void reverse() {
+			new RequestTask().execute(getIp() + "/api/reverse/true");
+		}
 
-		public void leftOff();
+		public void leftOn() {
+			new RequestTask().execute(getIp() + "/api/left/true");
+		}
 
-		public void rightOn();
+		public void leftOff() {
+			new RequestTask().execute(getIp() + "/api/left/false");
+		}
 
-		public void rightOff();
+		public void rightOn() {
+			new RequestTask().execute(getIp() + "/api/right/true");
+		}
 
-		public void stop();
+		public void rightOff() {
+			new RequestTask().execute(getIp() + "/api/right/false");
+		}
+
+		public void stop() {
+			new RequestTask().execute(getIp() + "/api/stop/true");
+		}
+	}
+
+	public String getIp() {
+		return "http://"
+				+ ((EditText) findViewById(R.id.ip)).getText().toString();
 	}
 
 	@SuppressWarnings("deprecation")
@@ -67,22 +97,18 @@ public class Blimp extends Activity implements SensorEventListener {
 					.permitAll().build();
 			StrictMode.setThreadPolicy(policy);
 		}
-		bridge = new Bridge("0d21e491ce3a2af4");
-		try {
-			bridge.connect();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		caradson = bridge.getService("caradson", Caradson.class);
+		caradson = new Caradson();
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_blimp);
 		accelerate = (Button) findViewById(R.id.accelerate);
 		reverse = (Button) findViewById(R.id.reverse);
+		auto = (Button) findViewById(R.id.auto);
 		accelerate.setOnTouchListener(new OnTouchListener() {
 			@Override
 			public boolean onTouch(View arg0, MotionEvent arg1) {
 				if (!accelerating) {
+					Log.d("ACCELERATING", "awesome");
 					caradson.accelerate();
 					accelerating = true;
 				}
@@ -110,6 +136,23 @@ public class Blimp extends Activity implements SensorEventListener {
 			@Override
 			public void onClick(View arg0) {
 				reversing = false;
+				caradson.stop();
+			}
+		});
+		auto.setOnTouchListener(new OnTouchListener() {
+			@Override
+			public boolean onTouch(View arg0, MotionEvent arg1) {
+				if (!autoing) {
+					caradson.auto();
+					autoing = true;
+				}
+				return false;
+			}
+		});
+		auto.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View arg0) {
+				autoing = false;
 				caradson.stop();
 			}
 		});
@@ -201,5 +244,40 @@ public class Blimp extends Activity implements SensorEventListener {
 
 		sTimestamp = event.timestamp;
 
+	}
+
+	class RequestTask extends AsyncTask<String, String, String> {
+
+		@Override
+		protected String doInBackground(String... uri) {
+			HttpClient httpclient = new DefaultHttpClient();
+			HttpResponse response;
+			String responseString = null;
+			try {
+				response = httpclient.execute(new HttpGet(uri[0]));
+				StatusLine statusLine = response.getStatusLine();
+				if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
+					ByteArrayOutputStream out = new ByteArrayOutputStream();
+					response.getEntity().writeTo(out);
+					out.close();
+					responseString = out.toString();
+				} else {
+					// Closes the connection.
+					response.getEntity().getContent().close();
+					throw new IOException(statusLine.getReasonPhrase());
+				}
+			} catch (ClientProtocolException e) {
+				// TODO Handle problems..
+			} catch (IOException e) {
+				// TODO Handle problems..
+			}
+			return responseString;
+		}
+
+		@Override
+		protected void onPostExecute(String result) {
+			super.onPostExecute(result);
+			// Do anything with response..
+		}
 	}
 }

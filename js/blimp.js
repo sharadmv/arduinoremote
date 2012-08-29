@@ -5,32 +5,38 @@ var serialPort = new SerialPort(port,{
   parser:sp.parsers.readline('\n')
 });
 serialPort.on('data',function(data){
-  console.log(data);
+  console.log("INCOMING SERIAL", data);
 });
 var blimp = {
   leftOn:function(){
-    serialPort.write("a");
-  },
-  leftOff:function(){
-    serialPort.write("b");
-  },
-  rightOn:function(){
-    serialPort.write("c");
-  },
-  rightOff:function(){
-    serialPort.write("d");
-  },
-  forwardOn:function(){
     serialPort.write("e");
   },
-  forwardOff:function(){
+  leftOff:function(){
     serialPort.write("f");
   },
-  backwardOn:function(){
+  rightOn:function(){
     serialPort.write("g");
   },
-  backwardOff:function(){
+  rightOff:function(){
     serialPort.write("h");
+  },
+  forwardOn:function(){
+    serialPort.write("a");
+  },
+  forwardOff:function(){
+    serialPort.write("b");
+  },
+  backwardOn:function(){
+    serialPort.write("c");
+  },
+  backwardOff:function(){
+    serialPort.write("d");
+  },
+  autoOn:function(){
+    serialPort.write("i");
+  },
+  autoOff:function(){
+    serialPort.write("j");
   }
 }
 module.exports = blimp;
